@@ -21,7 +21,7 @@ def _parse_ndk_version(rctx, ndk_home):
   # Use a script because rctx.execute can't do pipes
   rctx.file("extract_version.sh", '''
 #!/bin/bash
-cat $1 | grep "Pkg.Revision" | cut -d' ' -f3 | cut -d. -f1
+grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
 ''', executable = True)
   res = rctx.execute(["./extract_version.sh", source_prop_file])
   version = int(res.stdout.rstrip("\n"))
