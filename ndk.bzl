@@ -3,9 +3,24 @@ load(":build_template.bzl", "build_template")
 # This is a constant, not settable by the user.
 REPO_NAME = "androidndk"
 
+# Prints a debug string with a message key
 def _d(msg, obj):
   print(msg + " =", str(obj))
 
+# Returns the stdout of a command
+def _stdout(rctx, executable, kwargs):
+  return rctx.execute([executable] + kwargs).stdout
+
+# Common utilties
+def _cat(rctx, fpath):
+  fpath = str(fpath) if type(fpath) == "path" else fpath
+  return _stdout(rctx, "cat", [fpath])
+
+def _ls(rctx, fpath):
+  fpath = rctx.path(fpath) if type(fpath) == "string" else fpath
+  return fpath.readdir()
+
+# NDK specific functions
 def _get_default_api_level():
   return 26
 
@@ -17,37 +32,48 @@ def _get_source_properties(ndk_home):
 
 def _parse_ndk_version(rctx, ndk_home):
   source_prop_file = _get_source_properties(ndk_home)
+  exec_name = "extract"
 
   # Use a script because rctx.execute can't do pipes
-  rctx.file("extract_version.sh", '''
+  rctx.file(exec_name, '''
 #!/bin/bash
 grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
 ''', executable = True)
-  res = rctx.execute(["./extract_version.sh", source_prop_file])
+  res = rctx.execute(["./" + exec_name, source_prop_file])
   version = int(res.stdout.rstrip("\n"))
 
   # Cleanup
-  res = rctx.execute(["rm", "extract_version.sh"])
+  rctx.execute(["rm", exec_name])
   return version
 
 def _ndk_repository_impl(rctx):
+  # Symlink to the local NDK path
   rctx.symlink(rctx.attr.path, "ndk")
+  ndk_home = rctx.path("ndk")
+  _d("ndk_home", ndk_home)
+
+  # Create the top level BUILD file
   rctx.file("BUILD.bazel", build_template)
 
-  ndk_home = rctx.path("ndk")
+  # Get the NDK version.
   ndk_version = _parse_ndk_version(rctx, ndk_home)
   _d("ndk_version", ndk_version)
 
+  # Get the targeted API level.
   api_level = rctx.attr.api_level or _get_default_api_level()
-  platforms_dir = _get_platforms_dir(ndk_home)
+  _d("api_level", api_level)
 
+  # _cat(rctx, "BUILD.bazel")
 
-  _d("ndk_home", ndk_home)
-  # _d("ndk_version", _parse_ndk_version(rctx, ndk_home))
-  # print("ndk_home: " + str(ndk_home))
-  # print("api_level: " + str(api_level))
-  # print("platforms: " + str(platforms_dir))
-  print(_get_source_properties(ndk_home).exists)
+  # for p in _ls(rctx, _get_platforms_dir(ndk_home)):
+  #   _d("platform", p.basename())
+  #   What?
+  #   ERROR: Traceback (most recent call last):
+  #       File "/Users/jin/Code/ndks/ndk.bzl", line 68
+  #               _d("platform", p.basename())
+  #       File "/Users/jin/Code/ndks/ndk.bzl", line 68, in _d
+  #               p.basename()
+# method invocation failed: java.lang.IllegalAccessException: Class com.google.devtools.build.lib.syntax.FuncallExpression can not access a member of class com.google.devtools.build.lib.bazel.repository.skylark.SkylarkPath with modifiers "public"
 
   return None
 
