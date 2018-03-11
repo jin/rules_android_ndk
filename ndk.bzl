@@ -41,7 +41,7 @@ def _parse_ndk_version(rctx, ndk_home):
             grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
             ''', executable = True)
   res = rctx.execute(["./" + exec_name, source_prop_file])
-  version = int(res.stdout.rstrip("\n"))
+  version = int(res.stdout.strip())
 
   # Cleanup
   rctx.execute(["rm", exec_name])
