@@ -48,7 +48,13 @@ grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
 
 def _ndk_repository_impl(rctx):
   # Symlink to the local NDK path
-  rctx.symlink(rctx.attr.path, "ndk")
+  ndk_path = rctx.attr.path
+  if (ndk_path == "" and "ANDROID_NDK_HOME" in rctx.os.environ):
+    ndk_path = rctx.os.environ["ANDROID_NDK_HOME"]
+  else:
+    fail("Please specify the NDK path using ANDROID_NDK_HOME or android_ndk_repository.path")
+
+  rctx.symlink(ndk_path, "ndk")
   ndk_home = rctx.path("ndk")
   _d("ndk_home", ndk_home)
 
@@ -65,6 +71,8 @@ def _ndk_repository_impl(rctx):
 
   # _cat(rctx, "BUILD.bazel")
 
+  # platforms = _get_platforms_dir(ndk_home).readdir()
+
   # for p in _ls(rctx, _get_platforms_dir(ndk_home)):
   #   _d("platform", p.basename())
   #   What?
@@ -80,12 +88,13 @@ def _ndk_repository_impl(rctx):
 _android_ndk_repository = repository_rule(
     implementation = _ndk_repository_impl,
     attrs = {
-        "path": attr.string(mandatory = True), # mandatory because this is the only way to discover the path for now
+        "path": attr.string(mandatory = False, default = ""), # mandatory because this is the only way to discover the path for now
         "api_level": attr.int(mandatory = False),
     },
-    local=True
+    local=True,
+    environ = ["ANDROID_NDK_HOME"],
 )
 
 # TODO(jin): Detect ANDROID_NDK_HOME from environment
-def android_ndk_repository(path, **kwargs):
-  _android_ndk_repository(name = REPO_NAME, path = path, **kwargs)
+def android_ndk_repository(**kwargs):
+  _android_ndk_repository(name = REPO_NAME, **kwargs)
