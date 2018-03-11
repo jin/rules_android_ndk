@@ -2,6 +2,7 @@ load(":build_template.bzl", "build_template")
 
 # This is a constant, not settable by the user.
 REPO_NAME = "androidndk"
+NDK_ENV_VAR = "ANDROID_NDK_HOME"
 
 # Prints a debug string with a message key
 def _d(msg, obj):
@@ -36,9 +37,9 @@ def _parse_ndk_version(rctx, ndk_home):
 
   # Use a script because rctx.execute can't do pipes
   rctx.file(exec_name, '''
-#!/bin/bash
-grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
-''', executable = True)
+            #!/bin/bash
+            grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
+            ''', executable = True)
   res = rctx.execute(["./" + exec_name, source_prop_file])
   version = int(res.stdout.rstrip("\n"))
 
@@ -49,10 +50,10 @@ grep "Pkg.Revision" $1 | cut -d' ' -f3 | cut -d. -f1
 def _ndk_repository_impl(rctx):
   # Symlink to the local NDK path
   ndk_path = rctx.attr.path
-  if (ndk_path == "" and "ANDROID_NDK_HOME" in rctx.os.environ):
-    ndk_path = rctx.os.environ["ANDROID_NDK_HOME"]
+  if (ndk_path == "" and NDK_ENV_VAR in rctx.os.environ):
+    ndk_path = rctx.os.environ[NDK_ENV_VAR]
   else:
-    fail("Please specify the NDK path using ANDROID_NDK_HOME or android_ndk_repository.path")
+    fail("Please specify the NDK path using " + NDK_ENV_VAR + " or android_ndk_repository.path")
 
   rctx.symlink(ndk_path, "ndk")
   ndk_home = rctx.path("ndk")
@@ -88,13 +89,12 @@ def _ndk_repository_impl(rctx):
 _android_ndk_repository = repository_rule(
     implementation = _ndk_repository_impl,
     attrs = {
-        "path": attr.string(mandatory = False, default = ""), # mandatory because this is the only way to discover the path for now
+        "path": attr.string(mandatory = False, default = ""),
         "api_level": attr.int(mandatory = False),
-    },
-    local=True,
-    environ = ["ANDROID_NDK_HOME"],
-)
+        },
+    local = True,
+    environ = [NDK_ENV_VAR],
+    )
 
-# TODO(jin): Detect ANDROID_NDK_HOME from environment
 def android_ndk_repository(**kwargs):
   _android_ndk_repository(name = REPO_NAME, **kwargs)
