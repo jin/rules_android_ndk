@@ -91,10 +91,18 @@ _android_ndk_repository = repository_rule(
     attrs = {
         "path": attr.string(mandatory = False, default = ""),
         "api_level": attr.int(mandatory = False),
-        },
+    },
     local = True,
     environ = [NDK_ENV_VAR],
-    )
+)
 
 def android_ndk_repository(**kwargs):
+  native.bind(
+      name = "android/crosstool",
+      actual = "@androidndk//:toolchain-gnu-libstdcpp",
+  )
+  native.bind(
+      name = "android_ndk_for_testing",
+      actual = "@androidndk//:files",
+  )
   _android_ndk_repository(name = REPO_NAME, **kwargs)
