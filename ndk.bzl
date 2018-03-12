@@ -1,6 +1,4 @@
-load(":build_template.bzl", "build_template")
-
-# This is a constant, not settable by the user.
+# Constants, not settable by the user.
 REPO_NAME = "androidndk"
 NDK_ENV_VAR = "ANDROID_NDK_HOME"
 
@@ -59,9 +57,6 @@ def _ndk_repository_impl(rctx):
   ndk_home = rctx.path("ndk")
   _d("ndk_home", ndk_home)
 
-  # Create the top level BUILD file
-  rctx.file("BUILD.bazel", build_template)
-
   # Get the NDK version.
   ndk_version = _parse_ndk_version(rctx, ndk_home)
   _d("ndk_version", ndk_version)
@@ -84,6 +79,11 @@ def _ndk_repository_impl(rctx):
   #               p.basename()
 # method invocation failed: java.lang.IllegalAccessException: Class com.google.devtools.build.lib.syntax.FuncallExpression can not access a member of class com.google.devtools.build.lib.bazel.repository.skylark.SkylarkPath with modifiers "public"
 
+  # Create the top level BUILD file
+  rctx.template("BUILD.bazel", 
+                Label("//templates:build_file.tpl"), 
+                { '%defaultToolchain%': ':toolchain-gnu-stdlibcpp' })
+
   return None
 
 _android_ndk_repository = repository_rule(
@@ -99,7 +99,7 @@ _android_ndk_repository = repository_rule(
 def android_ndk_repository(**kwargs):
   native.bind(
       name = "android/crosstool",
-      actual = "@androidndk//:toolchain-gnu-libstdcpp",
+      actual = "@androidndk//:default_toolchain",
   )
   native.bind(
       name = "android_ndk_for_testing",

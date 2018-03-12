@@ -1,4 +1,3 @@
-build_template = '''
 # Copyright 2015 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +27,11 @@ cc_library(
     srcs = [],
 )
 
+alias(
+    name = "default_toolchain",
+    actual = "%defaultToolchain%",
+)
+
 ################################################################
 # cc toolchain suite rules (one for each STL in the NDK)
 ################################################################
@@ -51,4 +55,3 @@ cc_library(
 ################################################################
 
 # %miscLibraries%k
-'''
