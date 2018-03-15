@@ -2,7 +2,20 @@
 REPO_NAME = "androidndk"
 NDK_ENV_VAR = "ANDROID_NDK_HOME"
 
-# Prints a debug string with a message key
+SUPPORTED_MAJOR_REVISIONS = [
+    13,
+    14,
+    15,
+    16,
+    17
+]
+
+def _is_supported_revision(rev):
+  for i in range(0, len(SUPPORTED_MAJOR_REVISIONS)):
+    if SUPPORTED_MAJOR_REVISIONS[i] == rev:
+      return True
+  return False
+
 def _d(msg, obj):
   print(msg + " =", str(obj))
 
@@ -61,6 +74,10 @@ def _ndk_repository_impl(rctx):
   ndk_version = _parse_ndk_version(rctx, ndk_home)
   _d("ndk_version", ndk_version)
 
+  if not _is_supported_revision(ndk_version):
+    fail("NDK revision %s is not supported. Applying configuration for latest supported revision %s."
+         % (ndk_version, SUPPORTED_MAJOR_REVISIONS[-1]))
+
   # Get the targeted API level.
   api_level = rctx.attr.api_level or _get_default_api_level()
   _d("api_level", api_level)
@@ -80,8 +97,8 @@ def _ndk_repository_impl(rctx):
 # method invocation failed: java.lang.IllegalAccessException: Class com.google.devtools.build.lib.syntax.FuncallExpression can not access a member of class com.google.devtools.build.lib.bazel.repository.skylark.SkylarkPath with modifiers "public"
 
   # Create the top level BUILD file
-  rctx.template("BUILD.bazel", 
-                Label("//templates:build_file.tpl"), 
+  rctx.template("BUILD.bazel",
+                Label("//templates:build_file.tpl"),
                 { '%defaultToolchain%': ':toolchain-gnu-stdlibcpp' })
 
   return None
