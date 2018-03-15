@@ -10,6 +10,8 @@ SUPPORTED_MAJOR_REVISIONS = [
     17
 ]
 
+LATEST_SUPPORT_REVISION = SUPPORTED_MAJOR_REVISIONS[-1]
+
 def _is_supported_revision(rev):
   for i in range(0, len(SUPPORTED_MAJOR_REVISIONS)):
     if SUPPORTED_MAJOR_REVISIONS[i] == rev:
@@ -72,11 +74,13 @@ def _ndk_repository_impl(rctx):
 
   # Get the NDK version.
   ndk_version = _parse_ndk_version(rctx, ndk_home)
+  if not _is_supported_revision(ndk_version):
+    print("NDK revision %s is not supported. Applying configuration for latest supported revision %s. This might cause compilation or link errors."
+         % (ndk_version, LATEST_SUPPORT_REVISION))
+    ndk_version = LATEST_SUPPORT_REVISION 
+
   _d("ndk_version", ndk_version)
 
-  if not _is_supported_revision(ndk_version):
-    fail("NDK revision %s is not supported. Applying configuration for latest supported revision %s."
-         % (ndk_version, SUPPORTED_MAJOR_REVISIONS[-1]))
 
   # Get the targeted API level.
   api_level = rctx.attr.api_level or _get_default_api_level()
