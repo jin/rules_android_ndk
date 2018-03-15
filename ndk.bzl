@@ -44,15 +44,26 @@ def _ls(rctx, fpath):
   fpath = rctx.path(fpath) if type(fpath) == "string" else fpath
   return fpath.readdir()
 
-# NDK specific functions
-def _get_default_api_level():
-  return 26
-
 def _get_platforms_dir(ndk_home):
   return ndk_home.get_child("platforms")
 
 def _get_source_properties(ndk_home):
   return ndk_home.get_child("source.properties")
+
+def _get_supported_api_levels(ndk_home):
+  dirents = _get_platforms_dir(ndk_home).readdir()
+  # Need to use string operations because using path methods throws
+  # IllegalAccessExceptions.
+  api_levels = [
+      int(str(dirent).split("/")[-1].split("-")[-1])
+      for dirent in dirents 
+      if not str(dirent).endswith("NOTICE") 
+      and not str(dirent).endswith("repo.prop")
+  ]
+  return api_levels
+
+def _get_default_api_level(api_levels):
+  return sorted(api_levels)[-1]
 
 def _parse_ndk_revision(rctx, ndk_home):
   source_prop_file = _get_source_properties(ndk_home)
@@ -91,15 +102,20 @@ def _ndk_repository_impl(rctx):
 
   _d("ndk_revision", ndk_revision)
 
+  _d("clang version", _get_clang_version(ndk_revision))
+
+  _d("os", rctx.os.name)
+
+  api_levels = _get_supported_api_levels(ndk_home)
+  _d("api levels", api_levels)
+
   # Get the targeted API level.
-  api_level = rctx.attr.api_level or _get_default_api_level()
+  api_level = rctx.attr.api_level or _get_default_api_level(api_levels)
   _d("api_level", api_level)
 
-  _d("clang version", _get_clang_version(ndk_revision))
 
   # _cat(rctx, "BUILD.bazel")
 
-  # platforms = _get_platforms_dir(ndk_home).readdir()
 
   # for p in _ls(rctx, _get_platforms_dir(ndk_home)):
   #   _d("platform", p.basename())
