@@ -10,6 +10,13 @@ SUPPORTED_MAJOR_REVISIONS = [
     17
 ]
 
+CLANG_VERSIONS = {
+    13: "3.8.256229",
+    14: "3.8.275480",
+    15: "5.0.300080",
+    16: "5.0.300080",
+}
+
 LATEST_SUPPORT_REVISION = SUPPORTED_MAJOR_REVISIONS[-1]
 
 def _is_supported_revision(rev):
@@ -17,6 +24,9 @@ def _is_supported_revision(rev):
     if SUPPORTED_MAJOR_REVISIONS[i] == rev:
       return True
   return False
+
+def _get_clang_version(rev):
+  return CLANG_VERSIONS.get(rev)
 
 def _d(msg, obj):
   print(msg + " =", str(obj))
@@ -44,7 +54,7 @@ def _get_platforms_dir(ndk_home):
 def _get_source_properties(ndk_home):
   return ndk_home.get_child("source.properties")
 
-def _parse_ndk_version(rctx, ndk_home):
+def _parse_ndk_revision(rctx, ndk_home):
   source_prop_file = _get_source_properties(ndk_home)
   exec_name = "extract"
 
@@ -73,18 +83,19 @@ def _ndk_repository_impl(rctx):
   _d("ndk_home", ndk_home)
 
   # Get the NDK version.
-  ndk_version = _parse_ndk_version(rctx, ndk_home)
-  if not _is_supported_revision(ndk_version):
+  ndk_revision = _parse_ndk_revision(rctx, ndk_home)
+  if not _is_supported_revision(ndk_revision):
     print("NDK revision %s is not supported. Applying configuration for latest supported revision %s. This might cause compilation or link errors."
-         % (ndk_version, LATEST_SUPPORT_REVISION))
-    ndk_version = LATEST_SUPPORT_REVISION 
+         % (ndk_revision, LATEST_SUPPORT_REVISION))
+    ndk_revision = LATEST_SUPPORT_REVISION 
 
-  _d("ndk_version", ndk_version)
-
+  _d("ndk_revision", ndk_revision)
 
   # Get the targeted API level.
   api_level = rctx.attr.api_level or _get_default_api_level()
   _d("api_level", api_level)
+
+  _d("clang version", _get_clang_version(ndk_revision))
 
   # _cat(rctx, "BUILD.bazel")
 
