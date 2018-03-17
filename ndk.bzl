@@ -65,6 +65,13 @@ def _get_supported_api_levels(ndk_home):
 def _get_default_api_level(api_levels):
   return sorted(api_levels)[-1]
 
+def _get_host_os(rctx):
+  name = rctx.os.name
+  if name == "mac os x" or name == "linux" or name == "windows":
+    return name
+  else:
+    fail("The current OS, %s, is not supported." % name)
+
 def _parse_ndk_revision(rctx, ndk_home):
   source_prop_file = _get_source_properties(ndk_home)
   exec_name = "extract"
@@ -93,18 +100,22 @@ def _ndk_repository_impl(rctx):
   ndk_home = rctx.path("ndk")
   _d("ndk_home", ndk_home)
 
-  # Get the NDK version.
+  # Get the NDK revision
   ndk_revision = _parse_ndk_revision(rctx, ndk_home)
+  # Ensure that the revision is supported, otherwise assume latest revision.
   if not _is_supported_revision(ndk_revision):
     print("NDK revision %s is not supported. Applying configuration for latest supported revision %s. This might cause compilation or link errors."
          % (ndk_revision, LATEST_SUPPORT_REVISION))
     ndk_revision = LATEST_SUPPORT_REVISION 
-
   _d("ndk_revision", ndk_revision)
 
-  _d("clang version", _get_clang_version(ndk_revision))
+  clang_version = _get_clang_version(ndk_revision)
+  _d("clang version", clang_version)
 
-  _d("os", rctx.os.name)
+  host_os = _get_host_os(rctx)
+  _d("host_os", host_os)
+
+
 
   api_levels = _get_supported_api_levels(ndk_home)
   _d("api levels", api_levels)
