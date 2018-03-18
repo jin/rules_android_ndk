@@ -36,22 +36,22 @@ alias(
 # cc toolchain suite rules (one for each STL in the NDK)
 ################################################################
 
-# %ccToolchainSuites%
+%ccToolchainSuites%
 
 ################################################################
 # cc toolchain rules
 ################################################################
 
-# %ccToolchainRules%
+%ccToolchainRules%
 
 ################################################################
 # STL runtime library filegroups
 ################################################################
 
-# %stlFilegroups%
+%stlFilegroups%
 
 ################################################################
 # Miscellaneous runtime libraries
 ################################################################
 
-# %miscLibraries%k
+%miscLibraries%

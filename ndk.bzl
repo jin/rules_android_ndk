@@ -124,24 +124,19 @@ def _ndk_repository_impl(rctx):
   api_level = rctx.attr.api_level or _get_default_api_level(api_levels)
   _d("api_level", api_level)
 
-
-  # _cat(rctx, "BUILD.bazel")
-
-
-  # for p in _ls(rctx, _get_platforms_dir(ndk_home)):
-  #   _d("platform", p.basename())
-  #   What?
-  #   ERROR: Traceback (most recent call last):
-  #       File "/Users/jin/Code/ndks/ndk.bzl", line 68
-  #               _d("platform", p.basename())
-  #       File "/Users/jin/Code/ndks/ndk.bzl", line 68, in _d
-  #               p.basename()
-# method invocation failed: java.lang.IllegalAccessException: Class com.google.devtools.build.lib.syntax.FuncallExpression can not access a member of class com.google.devtools.build.lib.bazel.repository.skylark.SkylarkPath with modifiers "public"
+  all_substitutions = {
+      "%defaultToolchain%": ":toolchain-gnu-stdlibcpp",
+      "%ccToolchainSuites%": "",
+      "%ccToolchainRules%": "",
+      "%stlFilegroups%": "",
+      "%miscLibraries%": "",
+  }
 
   # Create the top level BUILD file
-  rctx.template("BUILD.bazel",
-                Label("//templates:build_file.tpl"),
-                { '%defaultToolchain%': ':toolchain-gnu-stdlibcpp' })
+  rctx.template(
+      "BUILD.bazel", 
+      Label("//templates:build_file.tpl"), 
+      all_substitutions)
 
   return None
 
