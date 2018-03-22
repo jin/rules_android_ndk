@@ -1,5 +1,6 @@
 # Constants, not settable by the user.
 REPO_NAME = "androidndk"
+
 NDK_ENV_VAR = "ANDROID_NDK_HOME"
 
 SUPPORTED_MAJOR_REVISIONS = [
@@ -7,7 +8,7 @@ SUPPORTED_MAJOR_REVISIONS = [
     14,
     15,
     16,
-    17
+    17,
 ]
 
 CLANG_VERSIONS = {
@@ -31,19 +32,6 @@ def _get_clang_version(rev):
 def _d(msg, obj):
   print(msg + " =", str(obj))
 
-# Returns the stdout of a command
-def _stdout(rctx, executable, kwargs):
-  return rctx.execute([executable] + kwargs).stdout
-
-# Common utilties
-def _cat(rctx, fpath):
-  fpath = str(fpath) if type(fpath) == "path" else fpath
-  return _stdout(rctx, "cat", [fpath])
-
-def _ls(rctx, fpath):
-  fpath = rctx.path(fpath) if type(fpath) == "string" else fpath
-  return fpath.readdir()
-
 def _get_platforms_dir(ndk_home):
   return ndk_home.get_child("platforms")
 
@@ -52,15 +40,13 @@ def _get_source_properties(ndk_home):
 
 def _get_supported_api_levels(ndk_home):
   dirents = _get_platforms_dir(ndk_home).readdir()
-  # Need to use string operations because using path methods throws
-  # IllegalAccessExceptions.
   api_levels = [
-      int(str(dirent).split("/")[-1].split("-")[-1])
+      int(dirent.basename.split("-")[-1])
       for dirent in dirents 
-      if not str(dirent).endswith("NOTICE") 
-      and not str(dirent).endswith("repo.prop")
+      if not dirent.basename == "NOTICE"
+      and not dirent.basename == "repo.prop"
   ]
-  return api_levels
+  return sorted(api_levels)
 
 def _get_default_api_level(api_levels):
   return sorted(api_levels)[-1]
@@ -115,8 +101,6 @@ def _ndk_repository_impl(rctx):
   host_os = _get_host_os(rctx)
   _d("host_os", host_os)
 
-
-
   api_levels = _get_supported_api_levels(ndk_home)
   _d("api levels", api_levels)
 
@@ -141,13 +125,16 @@ def _ndk_repository_impl(rctx):
   return None
 
 _android_ndk_repository = repository_rule(
-    implementation = _ndk_repository_impl,
     attrs = {
-        "path": attr.string(mandatory = False, default = ""),
+        "path": attr.string(
+            mandatory = False,
+            default = "",
+        ),
         "api_level": attr.int(mandatory = False),
     },
-    local = True,
     environ = [NDK_ENV_VAR],
+    local = True,
+    implementation = _ndk_repository_impl,
 )
 
 def android_ndk_repository(**kwargs):
