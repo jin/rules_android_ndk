@@ -32,14 +32,8 @@ def _get_clang_version(rev):
 def _d(msg, obj):
   print(msg + " =", str(obj))
 
-def _get_platforms_dir(ndk_home):
-  return ndk_home.get_child("platforms")
-
-def _get_source_properties(ndk_home):
-  return ndk_home.get_child("source.properties")
-
 def _get_supported_api_levels(ndk_home):
-  dirents = _get_platforms_dir(ndk_home).readdir()
+  dirents = ndk_home.get_child("platforms").readdir()
   api_levels = [
       int(dirent.basename.split("-")[-1])
       for dirent in dirents 
@@ -47,9 +41,6 @@ def _get_supported_api_levels(ndk_home):
       and not dirent.basename == "repo.prop"
   ]
   return sorted(api_levels)
-
-def _get_default_api_level(api_levels):
-  return sorted(api_levels)[-1]
 
 def _get_host_os(rctx):
   name = rctx.os.name
@@ -59,7 +50,7 @@ def _get_host_os(rctx):
     fail("The current OS, %s, is not supported." % name)
 
 def _parse_ndk_revision(rctx, ndk_home):
-  source_prop_file = _get_source_properties(ndk_home)
+  source_prop_file = ndk_home.get_child("source.properties")
   exec_name = "extract"
 
   # Use a script because rctx.execute can't do pipes
@@ -78,8 +69,7 @@ def _cat(rctx, f):
   if type(f) == "Label":
     return rctx.execute(["cat", rctx.path(f)]).stdout
   else:
-    fail("cat not supported for non labels")
-
+    fail("cat not supported for non labels yet")
 
 def _ndk_repository_impl(rctx):
   # Symlink to the local NDK path
@@ -112,7 +102,7 @@ def _ndk_repository_impl(rctx):
   _d("api levels", api_levels)
 
   # Get the targeted API level.
-  api_level = rctx.attr.api_level or _get_default_api_level(api_levels)
+  api_level = rctx.attr.api_level or api_levels[-1]
   _d("api_level", api_level)
 
   all_substitutions = {
