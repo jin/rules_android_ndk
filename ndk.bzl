@@ -74,6 +74,13 @@ def _parse_ndk_revision(rctx, ndk_home):
   rctx.execute(["rm", exec_name])
   return version
 
+def _cat(rctx, f):
+  if type(f) == "Label":
+    return rctx.execute(["cat", rctx.path(f)]).stdout
+  else:
+    fail("cat not supported for non labels")
+
+
 def _ndk_repository_impl(rctx):
   # Symlink to the local NDK path
   ndk_path = rctx.attr.path
@@ -113,7 +120,7 @@ def _ndk_repository_impl(rctx):
       "%ccToolchainSuites%": "",
       "%ccToolchainRules%": "",
       "%stlFilegroups%": "",
-      "%miscLibraries%": "",
+      "%miscLibraries%": _cat(rctx, Label("//templates:misc_libraries.tpl")),
   }
 
   # Create the top level BUILD file
